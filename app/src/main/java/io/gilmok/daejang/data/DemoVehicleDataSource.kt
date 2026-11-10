@@ -35,7 +35,11 @@ object DemoVehicleDataSource : VehicleDataSource {
     /** 차에서 실제로 기록한 마지막 운전. 있으면 예시 데이터 대신 이 값을 보여 줘요. */
     private val live = androidx.compose.runtime.mutableStateOf<Pair<Drive, List<ScoreItem>>?>(null)
 
-    fun recordLiveDrive(drive: Drive, items: List<ScoreItem>) { live.value = drive to items }
+    fun recordLiveDrive(drive: Drive, items: List<ScoreItem>) { previous = lastDrive().score; live.value = drive to items }
+    private var previous = 88
+    fun isLive() = live.value != null
+    /** 바로 전 운전 점수 (예시 데이터에서는 88점 → 91점, +3) */
+    fun previousScore() = previous
 
     override fun lastDrive() = live.value?.first ?: demoDrives().first()
 

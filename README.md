@@ -32,7 +32,11 @@
 ## 테스트 환경과 필요한 설정
 
 - 화면 기준: Pleos Connect-S 17인치 앱 창 1700×1184 dp (가로). 다른 크기의 화면에서는 같은 비율로 줄이거나 늘려 보여 줘요.
-- 확인한 환경: Android 14(API 34) 에뮬레이터 태블릿, 화면 캡처 테스트(Robolectric + Roborazzi), 점수 계산 테스트(`DriveScorerTest`)
+- 확인한 환경
+  - **Pleos Connect v2.1.0 에뮬레이터 (2560×1440)**: Vehicle·NaviHelper SDK와 차량 속도 연결, Virtual Console로 D → 주행 거리 23km → P를 넣으면 주차 코칭이 저절로 뜨고 실제 운전 결과(거리, 점수, 고칠 점)를 보여 줘요. 주행 중(D)에는 Pleos가 앱 화면을 가리고 기록만 이어져요.
+  - Android 14(API 34) 태블릿 에뮬레이터: SDK 연결 없이 예시 데이터로 동작
+  - 화면 캡처 테스트(Robolectric + Roborazzi), 점수 계산 테스트(`DriveScorerTest`)
+- 에뮬레이터 메모: v2.1.0 에뮬레이터는 트립 주행 거리를 지원하지 않아 누적 주행 거리의 차이로 거리를 계산하고, Virtual Console의 가속 버튼은 차량 속도 값을 바꾸지 않아 속도 기반 감점(과속·급가속·급제동)은 점수 계산 테스트로 확인했어요.
 - 개발 환경: Android API 28 이상(minSdk 28, targetSdk 35), Gradle 8.10.2, Kotlin 2.0.21, Jetpack Compose, JDK 17
 - Pleos SDK: Vehicle 2.3.2, NaviHelper 3.0.5 (Pleos Playground 공개 Maven 저장소, 신청 없이 사용)
 - 권한: 차에서는 처음 실행할 때 차량 속도와 주행 정보 읽기 권한(`CAR_SPEED`, `pleos.car.permission.CAR_DRIVE`·`CAR_INFO`·`CAR_SAFETY`)을 물어요. 읽기 권한만 쓰고 차를 제어하는 권한은 쓰지 않아요.

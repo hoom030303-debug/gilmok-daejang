@@ -53,13 +53,16 @@ class PleosVehicleLink(private val context: Context) {
                 v.getGear().registerGearSelection(gearListener)
                 v.getBrake().registerBrakePedalStatus(brakeListener)
                 v.getOdometer().registerTripCurrentDrivingDistance(distanceListener)
+                // 트립 거리가 없는 차는 누적 주행 거리의 차이로 거리를 계산해요
+                v.getOdometer().registerDistanceDriven(totalDistanceListener)
             }
             status.value = Status.CONNECTED
+            Log.i(TAG, "Vehicle SDK 연결됨")
         }.onFailure { Log.i(TAG, "Vehicle SDK 없음, 예시 데이터로 동작: ${it.message}") }
 
         runCatching {
             navi = NaviHelper(context).also { n ->
-                n.initialize({ n.addListener(naviListener) }, { Log.i(TAG, "NaviHelper 연결 실패: ${it.message}") })
+                n.initialize({ n.addListener(naviListener); Log.i(TAG, "NaviHelper 연결됨") }, { Log.i(TAG, "NaviHelper 연결 실패: ${it.message}") })
             }
         }.onFailure { Log.i(TAG, "NaviHelper 없음: ${it.message}") }
 
@@ -71,6 +74,7 @@ class PleosVehicleLink(private val context: Context) {
             vehicle?.getGear()?.unregisterGearSelection(gearListener)
             vehicle?.getBrake()?.unregisterBrakePedalStatus(brakeListener)
             vehicle?.getOdometer()?.unregisterTripCurrentDrivingDistance(distanceListener)
+            vehicle?.getOdometer()?.unregisterDistanceDriven(totalDistanceListener)
             vehicle?.release()
         }
         runCatching { navi?.removeListener(naviListener); navi?.release() }
@@ -80,10 +84,11 @@ class PleosVehicleLink(private val context: Context) {
     // ───────── 운전 시작과 끝 ─────────
 
     private fun onGear(gear: VehicleGear) {
+        Log.i(TAG, "기어 $gear (운전 중=${scorer != null})")
         when {
             gear == VehicleGear.GEAR_PARK -> finishDrive()
             scorer == null && (gear == VehicleGear.GEAR_DRIVE || gear == VehicleGear.GEAR_REVERSE) -> {
-                scorer = DriveScorer(); startedAt = System.currentTimeMillis()
+                scorer = DriveScorer().also { s -> if (!tripSupported) lastTotalKm?.let { s.onDistance(it) } }; startedAt = System.currentTimeMillis()
             }
         }
     }
@@ -92,6 +97,7 @@ class PleosVehicleLink(private val context: Context) {
         val s = scorer ?: return
         scorer = null
         val items = s.result()
+        Log.i(TAG, "운전 끝: ${s.distanceKm}km, 항목 $items")
         val km = Math.round(s.distanceKm * 10) / 10.0
         val minutes = ((System.currentTimeMillis() - startedAt) / 60_000).toInt().coerceAtLeast(1)
         val cal = Calendar.getInstance()
@@ -118,8 +124,14 @@ class PleosVehicleLink(private val context: Context) {
         override fun onFailed(e: Exception) { Log.w(TAG, "브레이크", e) }
     }
     private val distanceListener = object : DistanceDrivenListener {
-        override fun onDistanceDrivenUpdated(km: Float?) { if (km != null) main.post { scorer?.onDistance(km.toDouble()) } }
+        override fun onDistanceDrivenUpdated(km: Float?) { if (km != null) { tripSupported = true; main.post { scorer?.onDistance(km.toDouble()) } } }
         override fun onFailed(e: Exception) { Log.w(TAG, "주행 거리", e) }
+    }
+    private var tripSupported = false
+    private var lastTotalKm: Double? = null
+    private val totalDistanceListener = object : DistanceDrivenListener {
+        override fun onDistanceDrivenUpdated(km: Float?) { if (km != null && !tripSupported) main.post { lastTotalKm = km.toDouble(); scorer?.onDistance(km.toDouble()) } }
+        override fun onFailed(e: Exception) { Log.w(TAG, "누적 주행 거리 없음: ${e.message}") }
     }
     private val naviListener = object : NaviHelperEventListener {
         override fun onCurrentRoadSpeedLimit(limit: Int) { main.post { scorer?.speedLimit = limit } }

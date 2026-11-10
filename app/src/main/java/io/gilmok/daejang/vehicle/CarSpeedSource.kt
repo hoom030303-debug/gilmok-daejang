@@ -24,14 +24,17 @@ class CarSpeedSource private constructor(private val car: Car, private val manag
             return runCatching {
                 val car = Car.createCar(context)
                 val manager = car.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
+                var count = 0
                 val cb = object : CarPropertyManager.CarPropertyEventCallback {
                     override fun onChangeEvent(value: CarPropertyValue<*>) {
-                        (value.value as? Float)?.let { onKmh(it * 3.6f) }
+                        if (count++ % 20 == 0) Log.i("GilmokVehicle", "속도 ${value.value} (${value.value?.javaClass?.simpleName})")
+                        (value.value as? Number)?.toFloat()?.let { onKmh(it * 3.6f) }
                     }
                     override fun onErrorEvent(propId: Int, zone: Int) {}
                 }
-                manager.registerCallback(cb, VehiclePropertyIds.PERF_VEHICLE_SPEED, CarPropertyManager.SENSOR_RATE_NORMAL)
-                CarSpeedSource(car, manager, cb)
+                val ok = manager.registerCallback(cb, VehiclePropertyIds.PERF_VEHICLE_SPEED, CarPropertyManager.SENSOR_RATE_NORMAL)
+                Log.i("GilmokVehicle", "속도 등록=$ok")
+                Log.i("GilmokVehicle", "차량 속도 연결됨"); CarSpeedSource(car, manager, cb)
             }.onFailure { Log.i("GilmokVehicle", "차량 속도 연결 실패: ${it.message}") }.getOrNull()
         }
     }

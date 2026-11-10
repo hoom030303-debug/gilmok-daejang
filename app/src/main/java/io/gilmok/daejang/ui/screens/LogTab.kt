@@ -225,8 +225,22 @@ fun ParkingScreen(nav: Nav, voice: CoachVoice) {
     val league = data.league()
     val me = league.first { it.person == data.ME }
     val top = league.first()
-    val coach = "새솔초 앞 급제동 한 번이 4.3점이었어요. 퇴근길엔 미리 천천히 가 봐요"
-    LaunchedEffect(Unit) { voice.speak("${d.score}점이에요. ${road.name} 대장 자리를 되찾았어요. $coach") }
+    val live = data.isLive()
+    val worst = data.lastDriveItems().minBy { it.points }
+    val tips = mapOf(
+        io.gilmok.daejang.data.ScoreItem.Kind.SPEED to "제한 속도보다 10km/h 넘지 않게 달려 봐요",
+        io.gilmok.daejang.data.ScoreItem.Kind.BRAKE to "다음엔 신호 두 블록 전부터 천천히 멈춰 보세요",
+        io.gilmok.daejang.data.ScoreItem.Kind.ACCEL to "출발할 때 가속 페달을 천천히 밟아 봐요",
+        io.gilmok.daejang.data.ScoreItem.Kind.MISSED to "위험 구간 300m 앞부터 미리 속도를 줄여 봐요",
+    )
+    val clean = live && worst.points >= 0.0
+    val coach = when {
+        !live -> "새솔초 앞 급제동 한 번이 4.3점이었어요. 퇴근길엔 미리 천천히 가 봐요"
+        clean -> "감점 없이 부드럽게 달렸어요. 이대로면 이번 주 1위도 가능해요"
+        else -> "${worst.title} ${worst.detail}이 가장 컸어요. ${tips[worst.kind] ?: "다음엔 더 부드럽게 가 봐요"}"
+    }
+    LaunchedEffect(Unit) { voice.speak(if (live) "${d.score}점이에요. $coach" else "${d.score}점이에요. ${road.name} 대장 자리를 되찾았어요. $coach") }
+    val delta = d.score - data.previousScore()
 
     Screen(header = { CloseHeader({ nav.close() }, { nav.demoOpen = true }) }, coach = { CoachBar(coach, voice) }) {
         TwoColumns(
@@ -258,7 +272,7 @@ fun ParkingScreen(nav: Nav, voice: CoachVoice) {
                         }
                         Picture(R.drawable.pose_flag, Modifier.offset(x = 450.dp, y = 360.dp).size(230.dp, 218.dp))
                         Row(Modifier.align(Alignment.BottomStart).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                            Stat("지난 운전보다", "+3", "점", C.Green, Modifier.weight(1f))
+                            Stat("지난 운전보다", (if (delta >= 0) "+" else "") + delta, "점", if (delta >= 0) C.Green else C.Red, Modifier.weight(1f))
                             Stat("이번 주 평균", me.average.one(), "", C.Text, Modifier.weight(1f))
                             Stat("순위", "2", "위", C.Purple, Modifier.weight(1f))
                         }
@@ -267,7 +281,14 @@ fun ParkingScreen(nav: Nav, voice: CoachVoice) {
             },
             right = {
                 Column(verticalArrangement = Arrangement.spacedBy(30.dp)) {
-                    Card(Modifier.fillMaxWidth().height(261.dp), background = androidx.compose.ui.graphics.SolidColor(C.GreenSoft)) {
+                    if (live) Card(Modifier.fillMaxWidth().height(261.dp), background = androidx.compose.ui.graphics.SolidColor(C.PurpleSoft)) {
+                        Column {
+                            Pill("리그에 올렸어요", Color.White, C.Purple)
+                            Spacer(Modifier.height(14.dp))
+                            T("${d.title} ${d.km}km", 36f, C.Text, 900)
+                            T("길마다 대장은 지나간 길 기록으로 다시 계산해요", 20f, C.Sub)
+                        }
+                    } else Card(Modifier.fillMaxWidth().height(261.dp), background = androidx.compose.ui.graphics.SolidColor(C.GreenSoft)) {
                         Row {
                             Column(Modifier.weight(1f)) {
                                 Pill("대장 자리 되찾음", Color.White, C.Green)
@@ -284,15 +305,22 @@ fun ParkingScreen(nav: Nav, voice: CoachVoice) {
                     }
                     Card(Modifier.fillMaxWidth().height(258.dp)) {
                         Column {
-                            Pill("고칠 점 하나", C.RedSoft, C.Red, Icons.Filled.Warning)
-                            Spacer(Modifier.height(14.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                T("새솔초등학교 앞 급제동 1번", 33f, C.Text, 900, modifier = Modifier.weight(1f))
-                                T("-4.3", 45f, C.Red, 700, family = Fredoka)
+                            if (clean) {
+                                Pill("고칠 점 없음", C.GreenSoft, C.Green)
+                                Spacer(Modifier.height(14.dp))
+                                T("감점 없이 부드럽게 달렸어요", 33f, C.Text, 900)
+                                T("과속, 급제동, 급가속이 한 번도 없었어요", 20f, C.Sub)
+                            } else {
+                                Pill("고칠 점 하나", C.RedSoft, C.Red, Icons.Filled.Warning)
+                                Spacer(Modifier.height(14.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    T(if (live) "${worst.title} ${worst.detail}" else "새솔초등학교 앞 급제동 1번", 33f, C.Text, 900, modifier = Modifier.weight(1f))
+                                    T(if (live) worst.points.one() else "-4.3", 45f, C.Red, 700, family = Fredoka)
+                                }
+                                T(if (live) "이번 운전에서 감점이 가장 컸던 항목이에요" else "스쿨존 보너스 구간이라 감점이 2배예요", 20f, C.Sub)
+                                Spacer(Modifier.height(8.dp))
+                                T("→  " + (if (live) tips[worst.kind] ?: "" else "다음엔 신호 두 블록 전부터 천천히 멈춰 보세요"), 20f, C.Purple, 700)
                             }
-                            T("스쿨존 보너스 구간이라 감점이 2배예요", 20f, C.Sub)
-                            Spacer(Modifier.height(8.dp))
-                            T("→  다음엔 신호 두 블록 전부터 천천히 멈춰 보세요", 20f, C.Purple, 700)
                         }
                     }
                     Card(Modifier.fillMaxWidth().fillMaxHeight()) {
@@ -339,7 +367,7 @@ fun ShortDriveScreen(nav: Nav, voice: CoachVoice) {
         sub = "점수가 너무 크게 흔들리지 않게 하려는 규칙이에요",
         panel = {
             Row { T("이번 운전", 20f, C.Sub, 700); Spacer(Modifier.weight(1f)); T("집 앞 편의점 · 4분", 20f, C.Faint) }
-            NumUnit("1.3", "km", 48f, C.Text, 21f)
+            NumUnit(data.lastDrive().let { if (it.km < LeagueRules.MIN_DRIVE_KM) it.km.toString() else "1.3" }, "km", 48f, C.Text, 21f)
             Spacer(Modifier.height(10.dp))
             Bar(0.65f, C.Gold, Modifier.fillMaxWidth(), 14f)
         },
