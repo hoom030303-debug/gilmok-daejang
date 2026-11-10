@@ -32,9 +32,11 @@
 ## 테스트 환경과 필요한 설정
 
 - 화면 기준: Pleos Connect-S 17인치 앱 창 1700×1184 dp (가로). 다른 크기의 화면에서는 같은 비율로 줄이거나 늘려 보여 줘요.
-- 확인한 환경: Android 14(API 34) 에뮬레이터 태블릿, 화면 캡처 테스트(Robolectric + Roborazzi)
+- 확인한 환경: Android 14(API 34) 에뮬레이터 태블릿, 화면 캡처 테스트(Robolectric + Roborazzi), 점수 계산 테스트(`DriveScorerTest`)
 - 개발 환경: Android API 28 이상(minSdk 28, targetSdk 35), Gradle 8.10.2, Kotlin 2.0.21, Jetpack Compose, JDK 17
-- 따로 필요한 권한이나 계정은 없어요. 음성 읽기는 기기의 한국어 TTS를 써요.
+- Pleos SDK: Vehicle 2.3.2, NaviHelper 3.0.5 (Pleos Playground 공개 Maven 저장소, 신청 없이 사용)
+- 권한: 차에서는 처음 실행할 때 차량 속도와 주행 정보 읽기 권한(`CAR_SPEED`, `pleos.car.permission.CAR_DRIVE`·`CAR_INFO`·`CAR_SAFETY`)을 물어요. 읽기 권한만 쓰고 차를 제어하는 권한은 쓰지 않아요.
+- 음성 읽기는 기기의 한국어 TTS를 써요.
 
 ### 직접 빌드하기
 
@@ -47,15 +49,20 @@ release 빌드는 `keystore.properties`(저장소에 올리지 않음)에 서명
 
 ## 차량 데이터 연결
 
-1차 제출 APK는 SDK 사용 승인 전이라 예시 운전 기록(`DemoVehicleDataSource`)으로 동작해요. 차에서는 `VehicleDataSource`를 아래 SDK로 채워요.
+Pleos Connect 차량에서는 `vehicle/PleosVehicleLink.kt`가 차량 신호를 받아 운전 한 번을 기록하고, P 기어를 넣는 순간 점수를 매겨 주차 코칭 화면을 띄워요. 차가 아닌 기기(휴대폰, 일반 에뮬레이터)에서는 연결이 실패하고 예시 운전 기록(`DemoVehicleDataSource`)으로 그대로 동작해요.
 
-| 필요한 값 | 가져오는 곳 |
-| --- | --- |
-| 속도, 가속 | AAOS CarPropertyManager `PERF_VEHICLE_SPEED` |
-| 브레이크, 핸들 각도, 주행 거리 | Vehicle SDK (Brake, SteeringWheel, Odometer) |
-| 위치, 구간 진입 | FusedLocation SDK (`addProximityAlert`) |
-| 스쿨존, 사고 다발 구간, 제한 속도 | NaviHelper SDK (`onCautionPointInfo`, `onCurrentRoadSpeedLimit`) |
-| 코치 목소리, 음성 질문 | TextToSpeech SDK, SpeechToText SDK |
+| 필요한 값 | 가져오는 곳 | 상태 |
+| --- | --- | --- |
+| 출발·주차 순간 | Vehicle SDK `Gear.registerGearSelection` | 연결함 |
+| 급제동 판단 | Vehicle SDK `Brake.registerBrakePedalStatus` | 연결함 |
+| 주행 거리 (10km 기준 감점) | Vehicle SDK `Odometer.registerTripCurrentDrivingDistance` | 연결함 |
+| 속도, 급가속, 과속 | AAOS CarPropertyManager `PERF_VEHICLE_SPEED` | 연결함 |
+| 제한 속도 | NaviHelper SDK `onCurrentRoadSpeedLimit` | 연결함 |
+| 스쿨존, 사고 다발, 내리막 (2배 구간, 미리 감속) | NaviHelper SDK `onCautionPointInfo`, `onCameraAlert` | 연결함 |
+| 위치, 길 나누기 | FusedLocation SDK | Pleos에서 준비 중 (2차 전 연결) |
+| 코치 목소리, 음성 질문 | TextToSpeech SDK, SpeechToText SDK | Pleos에서 준비 중, 지금은 안드로이드 기본 TTS |
+
+점수 계산은 `data/DriveScorer.kt`에 있고, 안드로이드에 의존하지 않아 테스트로 확인해요. 23.4km 출근길 예시(스쿨존 급제동 1번, 급가속 2번, 미리 감속 놓침 1곳, 미리 감속 성공 2곳)를 신호로 재생하면 `100 − 11.7 + 2.7 = 91점`이 나와요.
 
 주행 중에는 화면을 띄우지 않고 소리로만 알려 주는 설계라 `distractionOptimized`를 넣지 않았어요.
 
@@ -76,11 +83,12 @@ apk/                         제출용 release APK
 app/src/main/java/io/gilmok/daejang/
   MainActivity.kt
   coach/CoachVoice.kt        대장 코치 목소리 (TTS)
-  data/                      점수 규칙, 차량 데이터 연결, 예시 데이터
+  data/                      점수 규칙, 운전 점수 계산기, 예시 데이터
+  vehicle/                   Pleos Vehicle·NaviHelper SDK, 차량 속도 연결
   ui/GilmokApp.kt            화면 이동, 1700×1184 비율 맞춤, 시연 메뉴
   ui/components/             머리줄, 코치 바, 카드, 버튼
   ui/screens/                탭별 화면
-app/src/test/                화면 캡처 테스트
+app/src/test/                화면 캡처 테스트, 점수 계산 테스트
 ```
 
 ## 사용한 글꼴

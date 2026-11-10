@@ -70,8 +70,17 @@ class Nav {
 }
 
 @Composable
-fun GilmokApp(voice: CoachVoice) {
+fun GilmokApp(voice: CoachVoice, vehicle: io.gilmok.daejang.vehicle.PleosVehicleLink? = null) {
     val nav = remember { Nav() }
+
+    // 차에서 P 기어를 넣으면 방금 운전으로 주차 코칭을 띄워요.
+    val parked = vehicle?.parkedEvent?.value ?: 0
+    LaunchedEffect(parked) {
+        if (parked > 0) {
+            val d = io.gilmok.daejang.data.DemoVehicleDataSource.lastDrive()
+            nav.go(if (d.km < io.gilmok.daejang.data.LeagueRules.MIN_DRIVE_KM) Route.SHORT else Route.PARKING)
+        }
+    }
 
     LaunchedEffect(Unit) { delay(1600); if (nav.current == Route.SPLASH) nav.replace(Route.HOME) }
     LaunchedEffect(nav.current) { voice.stop() }

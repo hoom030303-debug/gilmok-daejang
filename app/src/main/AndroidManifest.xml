@@ -4,12 +4,23 @@
     <!-- 차량(Android Automotive 기반 Pleos Connect)과 일반 에뮬레이터 모두에서 설치되도록 required=false -->
     <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
 
+    <!-- 차량 속도 (AAOS CarPropertyManager PERF_VEHICLE_SPEED) -->
+    <uses-permission android:name="android.car.permission.CAR_SPEED" />
+    <!-- Vehicle SDK 연결 권한(VEHICLE_BINDING)은 SDK가 스스로 선언해요 -->
+    <!-- 실제로 읽는 도메인만: 기어·브레이크·주행 거리(DRIVE), 차량 정보(INFO), 안전(SAFETY). 제어 권한은 쓰지 않아요 -->
+    <uses-permission android:name="pleos.car.permission.CAR_DRIVE" />
+    <uses-permission android:name="pleos.car.permission.CAR_INFO" />
+    <uses-permission android:name="pleos.car.permission.CAR_SAFETY" />
+
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="false"
         android:theme="@style/Theme.Gilmok">
+
+        <!-- 차가 아닌 기기에서도 설치되도록 android.car 라이브러리는 필수가 아니에요 -->
+        <uses-library android:name="android.car" android:required="false" />
 
         <!-- 주행 중에는 화면을 띄우지 않고 소리로만 알려 주는 설계라 distractionOptimized는 넣지 않았어요. -->
         <activity

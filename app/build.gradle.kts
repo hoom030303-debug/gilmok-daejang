@@ -14,6 +14,8 @@ val keystoreProps = Properties().apply {
 android {
     namespace = "io.gilmok.daejang"
     compileSdk = 35
+    // AAOS 차량 속도(PERF_VEHICLE_SPEED). 차에만 있는 라이브러리라 컴파일용으로만 붙여요.
+    useLibrary("android.car")
 
     defaultConfig {
         applicationId = "io.gilmok.daejang"
@@ -66,6 +68,10 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
+
+    // Pleos Connect SDK (신청 없이 바로 사용 가능한 두 SDK)
+    implementation("ai.pleos.playground:Vehicle:2.3.2")
+    implementation("ai.pleos.playground:NaviHelper:3.0.5")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 

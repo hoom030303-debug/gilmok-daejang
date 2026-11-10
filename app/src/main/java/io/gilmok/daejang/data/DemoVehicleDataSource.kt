@@ -23,16 +23,25 @@ object DemoVehicleDataSource : VehicleDataSource {
         LeagueMember(F3, weeklyKm = 41.0, average = 82.1, lastWeek = 80.0, roadsHeld = 2),
     )
 
-    override fun drivesThisWeek() = listOf(
+    override fun drivesThisWeek(): List<Drive> = listOfNotNull(live.value?.first) + demoDrives().let { if (live.value != null) it.drop(1) else it }
+
+    private fun demoDrives() = listOf(
         Drive("금", 13, "출근길", "오늘 07:18", 23.4, 41, 91, badge = "대장 되찾음"),
         Drive("목", 12, "퇴근길", "18:35", 22.8, 44, 94),
         Drive("목", 12, "출근길", "07:20", 23.4, 40, 94),
         Drive("수", 11, "퇴근길", "18:40", 23.1, 43, 89),
     )
 
-    override fun lastDrive() = drivesThisWeek().first()
+    /** 차에서 실제로 기록한 마지막 운전. 있으면 예시 데이터 대신 이 값을 보여 줘요. */
+    private val live = androidx.compose.runtime.mutableStateOf<Pair<Drive, List<ScoreItem>>?>(null)
 
-    override fun lastDriveItems() = listOf(
+    fun recordLiveDrive(drive: Drive, items: List<ScoreItem>) { live.value = drive to items }
+
+    override fun lastDrive() = live.value?.first ?: demoDrives().first()
+
+    override fun lastDriveItems() = live.value?.second ?: demoItems()
+
+    private fun demoItems() = listOf(
         ScoreItem("과속", "0번", 0.0, ScoreItem.Kind.SPEED),
         ScoreItem("급제동", "1번 · 스쿨존 2배", -4.3, ScoreItem.Kind.BRAKE),
         ScoreItem("급가속", "2번", -3.4, ScoreItem.Kind.ACCEL),
