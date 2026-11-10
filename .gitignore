@@ -1,0 +1,18 @@
+.gradle/
+build/
+app/build/
+local.properties
+.idea/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+build-log.txt
+build-err.txt
+
+# 서명 키와 비밀번호는 저장소에 올리지 않아요
+keystore/
+keystore.properties
+*.jks
