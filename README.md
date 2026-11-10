@@ -7,7 +7,7 @@
 ## APK 위치
 
 - `apk/길목대장_길목대장_release.apk` (서명된 release 버전)
-- 같은 파일을 GitHub Releases에도 올려 두었어요.
+- 같은 파일을 GitHub Releases에도 올려 두었어요: https://github.com/hoom030303-debug/gilmok-daejang/releases/tag/v1.0.0 (첨부 파일 이름은 GitHub 규칙상 영문 `gilmokdaejang_gilmokdaejang_release.apk`)
 
 ## 실행 방법
 
