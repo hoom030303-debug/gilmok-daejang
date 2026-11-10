@@ -163,7 +163,7 @@ fun DriveDetailScreen(nav: Nav, voice: CoachVoice) {
                             NumUnit("$total", "점", 64f, C.Purple, 22f)
                         }
                         Spacer(Modifier.height(24.dp))
-                        Picture(R.drawable.map_route, Modifier.fillMaxSize().clip(RoundedCornerShape(36.dp)), ContentScale.FillBounds)
+                        Picture(R.drawable.map_route, Modifier.fillMaxSize().clip(RoundedCornerShape(36.dp)), ContentScale.Crop)
                     }
                 }
             },

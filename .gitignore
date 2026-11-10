@@ -19,3 +19,4 @@ keystore.properties
 
 publish.ps1
 fix-release.ps1
+update.ps1

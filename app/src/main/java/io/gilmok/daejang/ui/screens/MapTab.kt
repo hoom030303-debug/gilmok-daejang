@@ -45,7 +45,7 @@ fun MapScreen(nav: Nav, voice: CoachVoice) {
                 Picture(
                     R.drawable.map_friends,
                     Modifier.fillMaxSize().clip(RoundedCornerShape(L.RADIUS.dp)),
-                    ContentScale.FillBounds,
+                    ContentScale.Crop,
                 )
             },
             right = {
@@ -116,7 +116,7 @@ fun RoadScreen(nav: Nav, voice: CoachVoice) {
                         T(road.name, 48f, C.Text, 900)
                         T("${road.kind} · 출근길에 매일 지나요", 21f, C.Sub)
                         Spacer(Modifier.height(24.dp))
-                        Picture(R.drawable.map_road, Modifier.fillMaxWidth().height(343.dp).clip(RoundedCornerShape(36.dp)), ContentScale.FillBounds)
+                        Picture(R.drawable.map_road, Modifier.fillMaxWidth().height(343.dp).clip(RoundedCornerShape(36.dp)), ContentScale.Crop)
                         Spacer(Modifier.weight(1f))
                         Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                             StatTile("지금 대장", road.leader.name, road.leaderAverage.one(), road.leader.avatar, road.leader.color, Modifier.weight(1f))
