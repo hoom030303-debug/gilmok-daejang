@@ -66,8 +66,9 @@ fun HomeScreen(nav: Nav, voice: CoachVoice) {
     val coach = "${retaken.name}를 되찾았어요. 내일은 ${next.name}만 미리 줄여 봐요"
 
     Screen(
-        header = { Header(nav, Tab.HOME) },
+        header = { Header(nav) },
         coach = { CoachBar(coach, voice) },
+        tabBar = { Tabs(nav, Tab.HOME) },
     ) {
         TwoColumns(
             equal = true,
@@ -102,7 +103,7 @@ fun HomeScreen(nav: Nav, voice: CoachVoice) {
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 listOf("과속" to ("0" to "번"), "급제동" to ("1" to "번"), "급가속" to ("2" to "번"), "미리 감속" to ("2" to "곳")).forEach { (label, v) ->
                                     Column(
-                                        Modifier.width(153.dp).height(97.dp).clip(RoundedCornerShape(20.dp)).background(Color(0x26FFFFFF)).padding(horizontal = 18.dp, vertical = 12.dp),
+                                        Modifier.weight(1f).height(97.dp).clip(RoundedCornerShape(20.dp)).background(Color(0x26FFFFFF)).padding(horizontal = 18.dp, vertical = 12.dp),
                                     ) {
                                         T(label, 20f, Color(0xD9FFFFFF))
                                         NumUnit(v.first, v.second, 36f, Color.White, 20f, Color(0xD9FFFFFF))
@@ -155,7 +156,7 @@ fun HomeScreen(nav: Nav, voice: CoachVoice) {
                                 .clickable { nav.go(Route.GROWTH) }.padding(horizontal = 30.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            T("+4.8", 48f, C.Green, 700, family = Fredoka)
+                            T("+4.8", 48f, C.Green, io.gilmok.daejang.ui.theme.BOLD_NUM, family = Fredoka)
                             Spacer(Modifier.width(36.dp))
                             Column(Modifier.weight(1f)) {
                                 T("성장 순위 1위", 26f, C.Text, 700)

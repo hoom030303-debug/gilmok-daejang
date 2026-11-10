@@ -38,12 +38,16 @@ import io.gilmok.daejang.ui.theme.Fredoka
 val data = DemoVehicleDataSource
 
 @Composable
-fun Header(nav: Nav, tab: Tab, status: @Composable () -> Unit = { io.gilmok.daejang.ui.components.StatusChip() }) = TabHeader(
+fun Header(nav: Nav, status: @Composable () -> Unit = { io.gilmok.daejang.ui.components.StatusChip() }) = TabHeader(
+    onDemo = { nav.demoOpen = true },
+    status = status,
+)
+
+@Composable
+fun Tabs(nav: Nav, tab: Tab) = io.gilmok.daejang.ui.components.BottomTabs(
     current = tab,
     onTab = { nav.tab(it) },
     onMic = { nav.go(Route.VOICE) },
-    onDemo = { nav.demoOpen = true },
-    status = status,
 )
 
 @Composable
@@ -62,7 +66,7 @@ fun RankRow(rank: String, m: LeagueMember, height: Float, avatar: Float, right: 
             .padding(horizontal = 24.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        T(rank, 33f, if (me) C.Pink else if (faded) C.Faint else C.Text, 700, family = Fredoka, modifier = Modifier.width(40.dp))
+        T(rank, 33f, if (me) C.Pink else if (faded) C.Faint else C.Text, io.gilmok.daejang.ui.theme.BOLD_NUM, family = Fredoka, modifier = Modifier.width(40.dp))
         Avatar(m.person.avatar, avatar, alpha = if (faded) 0.55f else 1f)
         Spacer(Modifier.width(22.dp))
         Column(Modifier.weight(1f)) {
@@ -82,9 +86,9 @@ fun leagueSub(m: LeagueMember) =
     else "50km까지 ${(50 - m.weeklyKm).toInt()}km 남음"
 
 @Composable
-fun ScoreText(m: LeagueMember, size: Float = 45f) {
+fun ScoreText(m: LeagueMember, size: Float = 45f, bold: Boolean = false) {
     val me = m.person == data.ME
-    T(m.average.one(), size, if (me) C.Pink else if (!m.ranked) C.Faint else C.Text, 700, family = Fredoka)
+    T(m.average.one(), size, if (me) C.Pink else if (!m.ranked) C.Faint else C.Text, if (bold) io.gilmok.daejang.ui.theme.BOLD_NUM else 600, family = Fredoka)
 }
 
 @Composable

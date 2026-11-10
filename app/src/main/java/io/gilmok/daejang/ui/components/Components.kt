@@ -79,8 +79,9 @@ fun T(
         modifier = modifier,
         maxLines = maxLines,
         style = TextStyle(
-            fontFamily = family,
-            fontWeight = FontWeight(weight),
+            fontFamily = if (family === Fredoka && weight >= io.gilmok.daejang.ui.theme.BOLD_NUM) io.gilmok.daejang.ui.theme.Fonts.fredokaBold else family,
+            fontWeight = if (family === Fredoka) FontWeight.Normal else FontWeight(weight),
+            fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.None,
             fontSize = size.sp,
             color = color,
             lineHeight = (lineHeight ?: (size * 1.4f)).sp,
@@ -91,11 +92,11 @@ fun T(
 
 /** 숫자(Fredoka) + 단위(Noto) */
 @Composable
-fun NumUnit(num: String, unit: String, size: Float, color: Color, unitSize: Float = 21f, unitColor: Color = C.Sub, modifier: Modifier = Modifier) {
+fun NumUnit(num: String, unit: String, size: Float, color: Color, unitSize: Float = 21f, unitColor: Color = C.Sub, modifier: Modifier = Modifier, bold: Boolean = false) {
     Text(
         modifier = modifier,
         text = buildAnnotatedString {
-            withStyle(SpanStyle(fontFamily = Fredoka, fontWeight = FontWeight(700), fontSize = size.sp, color = color)) { append(num) }
+            withStyle(SpanStyle(fontFamily = if (bold) io.gilmok.daejang.ui.theme.Fonts.fredokaBold else Fredoka,fontWeight = FontWeight.Normal, fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.None, fontSize = size.sp, color = color)) { append(num) }
             withStyle(SpanStyle(fontFamily = Noto, fontWeight = FontWeight(700), fontSize = unitSize.sp, color = unitColor)) { append(" $unit") }
         },
     )
@@ -226,32 +227,56 @@ fun AppTitle(onLongPressLogo: () -> Unit) {
 }
 
 @Composable
-fun TabHeader(current: Tab, onTab: (Tab) -> Unit, onMic: () -> Unit, onDemo: () -> Unit, status: @Composable () -> Unit = { StatusChip() }) {
+fun TabHeader(onDemo: () -> Unit, status: @Composable () -> Unit = { StatusChip() }) {
     Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
         AppTitle(onDemo)
-        Spacer(Modifier.width(48.dp))
-        Tab.entries.forEach { tab ->
-            val on = tab == current
-            Column(
-                Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onTab(tab) }
-                    .padding(horizontal = 20.dp).padding(top = 14.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                T(tab.label, 28f, if (on) C.Text else C.Faint, if (on) 700 else 500)
-                Spacer(Modifier.height(10.dp))
-                Box(Modifier.width(48.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(if (on) C.Purple else Color.Transparent))
-            }
-            Spacer(Modifier.width(8.dp))
-        }
         Spacer(Modifier.weight(1f))
         status()
-        Spacer(Modifier.width(16.dp))
-        MicButton(onMic)
+    }
+}
+
+/** 하단 탭 (홈 · 친구 지도 · 가운데 마이크 · 운전 기록 · 리그) */
+@Composable
+fun BottomTabs(current: Tab, onTab: (Tab) -> Unit, onMic: () -> Unit) {
+    val icons = mapOf(Tab.HOME to R.drawable.tab_home, Tab.MAP to R.drawable.tab_map, Tab.LOG to R.drawable.tab_log, Tab.LEAGUE to R.drawable.tab_league)
+    @Composable
+    fun RowScope.Slot(tab: Tab) {
+        val on = tab == current
+        Box(
+            Modifier.weight(1f).fillMaxHeight()
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onTab(tab) },
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                Modifier.size(208.dp, 97.dp).clip(RoundedCornerShape(31.dp)).background(if (on) C.PurpleSoft else Color.Transparent),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+            ) {
+                Image(
+                    painterResource(icons.getValue(tab)), tab.label, modifier = Modifier.size(37.dp),
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(if (on) C.Purple else C.Sub),
+                )
+                Spacer(Modifier.height(4.dp))
+                T(tab.label, 20f, if (on) C.Purple else C.Sub, if (on) 700 else 500)
+            }
+        }
+    }
+    Row(Modifier.fillMaxSize().clip(RoundedCornerShape(42.dp)).background(Color.White), verticalAlignment = Alignment.CenterVertically) {
+        Slot(Tab.HOME)
+        Slot(Tab.MAP)
+        Box(Modifier.width(110.dp), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier.size(110.dp).shadow(16.dp, CircleShape, ambientColor = C.Purple, spotColor = C.Purple)
+                    .clip(CircleShape).background(C.PurpleButton).clickable(onClick = onMic),
+                contentAlignment = Alignment.Center,
+            ) { MicGlyph(Color.White, 46f) }
+        }
+        Slot(Tab.LOG)
+        Slot(Tab.LEAGUE)
     }
 }
 
 @Composable
-fun BackHeader(title: String, onBack: () -> Unit, onMic: () -> Unit) {
+fun BackHeader(title: String, onBack: () -> Unit) {
     Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier.size(73.dp).clip(CircleShape).background(Color.White).clickable(onClick = onBack),
@@ -261,8 +286,6 @@ fun BackHeader(title: String, onBack: () -> Unit, onMic: () -> Unit) {
         T(title, 36f, C.Text, 900)
         Spacer(Modifier.weight(1f))
         StatusChip()
-        Spacer(Modifier.width(16.dp))
-        MicButton(onMic)
     }
 }
 
@@ -383,28 +406,65 @@ private fun Wave(active: Boolean) {
 
 // ───────── 화면 틀 ─────────
 
-/** 1700×1184 앱 창 안에 머리줄, 본문, 코치 바를 공식 규격 위치에 놓아요. */
+/** 본문 칸 나누기 값. 하단 탭이 있는 화면은 전체를 줄여 그리므로 설계 단위 폭이 달라요. */
+data class Lay(val contentW: Float, val leftW: Float, val rightW: Float, val gap: Float, val equalGap: Float)
+
+private val PopupLay = Lay(L.CONTENT_W, L.LEFT_W, L.RIGHT_W, L.GAP, L.GAP)
+
+/** 하단 탭 화면 배율: Figma 탭 화면(본문 732)과 저절로 뜨는 화면(본문 838)의 비율 */
+private const val TAB_SCALE = 732f / 838f
+private val TabLay = Lay(1456f / TAB_SCALE, 943f / TAB_SCALE, 487f / TAB_SCALE, 26f / TAB_SCALE, 32f / TAB_SCALE)
+
+val LocalLay = androidx.compose.runtime.staticCompositionLocalOf { PopupLay }
+
+/**
+ * 1700×1184 앱 창 안에 머리줄, 본문, 코치 바(, 하단 탭)를 Figma 위치에 놓아요.
+ * - 저절로 뜨는 화면(tabBar = null): 머리줄 52 · 본문 167~1005 · 코치 바 1035
+ * - 탭·상세 화면: 머리줄 43 · 본문 144~876 · 코치 바 903 · 하단 탭 1025 (전체를 0.87배로 그려요)
+ */
 @Composable
 fun Screen(
     header: @Composable () -> Unit,
     coach: (@Composable () -> Unit)?,
+    tabBar: (@Composable () -> Unit)? = null,
     body: @Composable () -> Unit,
 ) {
-    Box(Modifier.size(L.W.dp, L.H.dp).background(C.Bg)) {
-        Box(Modifier.offset(L.X.dp, L.HEADER_Y.dp).size(L.CONTENT_W.dp, L.HEADER_H.dp)) { header() }
-        val bodyH = if (coach == null) L.BODY_H + L.COACH_H + 30f else L.BODY_H
-        Box(Modifier.offset(L.X.dp, L.BODY_Y.dp).size(L.CONTENT_W.dp, bodyH.dp)) { body() }
-        if (coach != null) Box(Modifier.offset(L.X.dp, L.COACH_Y.dp).size(L.CONTENT_W.dp, L.COACH_H.dp)) { coach() }
+    if (tabBar == null) {
+        androidx.compose.runtime.CompositionLocalProvider(LocalLay provides PopupLay) {
+            Box(Modifier.size(L.W.dp, L.H.dp).background(C.Bg)) {
+                Box(Modifier.offset(L.X.dp, L.HEADER_Y.dp).size(L.CONTENT_W.dp, L.HEADER_H.dp)) { header() }
+                val bodyH = if (coach == null) L.BODY_H + L.COACH_H + 30f else L.BODY_H
+                Box(Modifier.offset(L.X.dp, L.BODY_Y.dp).size(L.CONTENT_W.dp, bodyH.dp)) { body() }
+                if (coach != null) Box(Modifier.offset(L.X.dp, L.COACH_Y.dp).size(L.CONTENT_W.dp, L.COACH_H.dp)) { coach() }
+            }
+        }
+        return
+    }
+    val d = androidx.compose.ui.platform.LocalDensity.current
+    val s = TAB_SCALE
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(d.density * s, d.fontScale),
+        LocalLay provides TabLay,
+    ) {
+        val w = TabLay.contentW
+        Box(Modifier.size((L.W / s).dp, (L.H / s).dp).background(C.Bg)) {
+            Box(Modifier.offset((122f / s).dp, (43f / s).dp).size(w.dp, (64f / s).dp)) { header() }
+            Box(Modifier.offset((122f / s).dp, (144f / s).dp).size(w.dp, (732f / s).dp)) { body() }
+            if (coach != null) Box(Modifier.offset((122f / s).dp, (903f / s).dp).size(w.dp, (96f / s).dp)) { coach() }
+            Box(Modifier.offset((122f / s).dp, (1025f / s).dp).size(w.dp, (117f / s).dp)) { tabBar() }
+        }
     }
 }
 
-/** 왼쪽 큰 카드 + 오른쪽 좁은 카드 */
+/** 왼쪽 큰 카드 + 오른쪽 좁은 카드 (equal = 같은 너비 두 칸) */
 @Composable
 fun TwoColumns(equal: Boolean = false, left: @Composable () -> Unit, right: @Composable () -> Unit) {
-    val half = (L.CONTENT_W - L.GAP) / 2f
-    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(L.GAP.dp)) {
-        Box(Modifier.width((if (equal) half else L.LEFT_W).dp).fillMaxHeight()) { left() }
-        Box(Modifier.width((if (equal) half else L.RIGHT_W).dp).fillMaxHeight()) { right() }
+    val lay = LocalLay.current
+    val gap = if (equal) lay.equalGap else lay.gap
+    val half = (lay.contentW - gap) / 2f
+    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(gap.dp)) {
+        Box(Modifier.width((if (equal) half else lay.leftW).dp).fillMaxHeight()) { left() }
+        Box(Modifier.width((if (equal) half else lay.rightW).dp).fillMaxHeight()) { right() }
     }
 }
 

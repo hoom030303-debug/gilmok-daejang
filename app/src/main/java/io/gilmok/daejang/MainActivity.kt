@@ -12,6 +12,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        io.gilmok.daejang.ui.theme.Fonts.init(this)
         voice = CoachVoice(this)
         setContent { GilmokApp(voice) }
     }

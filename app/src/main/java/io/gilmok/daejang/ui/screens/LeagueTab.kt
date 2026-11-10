@@ -1,4 +1,4 @@
-package io.gilmok.daejang.ui.screens
+﻿package io.gilmok.daejang.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,6 +41,7 @@ import io.gilmok.daejang.data.one
 import io.gilmok.daejang.ui.Nav
 import io.gilmok.daejang.ui.Route
 import io.gilmok.daejang.ui.components.*
+import io.gilmok.daejang.ui.components.LocalLay
 import io.gilmok.daejang.ui.theme.C
 import io.gilmok.daejang.ui.theme.Fredoka
 
@@ -54,7 +55,7 @@ fun LeagueScreen(nav: Nav, voice: CoachVoice, growth: Boolean) {
     else "친구 1과 1.5점 차예요. 주말 동안 부드럽게 달리면 따라잡을 수 있어요"
     val days = listOf(86, 88, 89, 94, 91)
 
-    Screen(header = { Header(nav, Tab.LEAGUE) }, coach = { CoachBar(coach, voice) }) {
+    Screen(header = { Header(nav) }, coach = { CoachBar(coach, voice) }, tabBar = { Tabs(nav, Tab.LEAGUE) }) {
         TwoColumns(
             left = {
                 Card(Modifier.fillMaxSize()) {
@@ -71,7 +72,7 @@ fun LeagueScreen(nav: Nav, voice: CoachVoice, growth: Boolean) {
                             if (growth) {
                                 RankRow("${i + 1}", m.copy(weeklyKm = 99.0), 155f, 97f, right = { GrowthPill(m.growth) }, sub = "지난주 ${m.lastWeek.one()}  →  이번 주 ${m.average.one()}", crown = false, tag = if (i == 0) "성장왕" else null)
                             } else {
-                                RankRow(if (m.ranked) "${i + 1}" else "-", m, 155f, 97f, right = { ScoreText(m, 48f) }, sub = leagueSub(m))
+                                RankRow(if (m.ranked) "${i + 1}" else "-", m, 155f, 97f, right = { ScoreText(m, 48f, bold = true) }, sub = leagueSub(m))
                             }
                         }
                     }
@@ -133,19 +134,20 @@ private fun GrowthPill(g: Double) {
 fun InviteScreen(nav: Nav, voice: CoachVoice) {
     val code = "482915"
     val coach = "코드는 482 915예요. 친구가 들어오면 바로 알려 드릴게요"
-    Screen(header = { BackHeader("리그", { nav.back() }, { nav.go(Route.VOICE) }) }, coach = { CoachBar(coach, voice) }) {
-        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(31.dp)) {
-            Card(Modifier.width(940.dp).fillMaxHeight(), background = C.SoftPurpleCard) {
+    Screen(header = { BackHeader("리그", { nav.back() }) }, coach = { CoachBar(coach, voice) }, tabBar = { Tabs(nav, Tab.LEAGUE) }) {
+        val lay = LocalLay.current
+        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(lay.gap.dp)) {
+            Card(Modifier.width(lay.leftW.dp).fillMaxHeight(), background = C.SoftPurpleCard) {
                 Column {
                     Pill("리그 초대", Color.White, C.Purple)
                     Spacer(Modifier.height(18.dp))
                     T(data.LEAGUE_NAME, 48f, C.Text, 900)
                     T("친구가 이 코드를 넣으면 바로 같은 리그예요", 21f, C.Sub)
                     Spacer(Modifier.height(30.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                         code.forEachIndexed { i, ch ->
-                            if (i == 3) { Box(Modifier.padding(horizontal = 14.dp).width(24.dp).height(6.dp).clip(RoundedCornerShape(3.dp)).background(C.PurpleChar)) }
-                            Box(Modifier.padding(end = 18.dp).size(121.dp, 146.dp).clip(RoundedCornerShape(27.dp)).background(Color.White), contentAlignment = Alignment.Center) {
+                            if (i == 3) { Box(Modifier.width(24.dp).height(6.dp).clip(RoundedCornerShape(3.dp)).background(C.PurpleChar)) }
+                            Box(Modifier.weight(1f).height(146.dp).clip(RoundedCornerShape(27.dp)).background(Color.White), contentAlignment = Alignment.Center) {
                                 T("$ch", 72f, C.Purple, 700, family = Fredoka)
                             }
                         }
@@ -171,7 +173,7 @@ fun InviteScreen(nav: Nav, voice: CoachVoice) {
                     }
                 }
             }
-            Column(Modifier.width(485.dp), verticalArrangement = Arrangement.spacedBy(30.dp)) {
+            Column(Modifier.width(lay.rightW.dp), verticalArrangement = Arrangement.spacedBy(30.dp)) {
                 Card(Modifier.fillMaxWidth().height(294.dp)) {
                     Column {
                         Pill("이번 주 내기", Color(0xFFFFF0E0), C.Orange)
@@ -287,7 +289,7 @@ private fun Podium(x: Float, h: Float, rank: String, name: String, top: Color, b
     val baseY = 640f
     Box(Modifier.offset(x.dp, (baseY - h).dp).size(227.dp, h.dp).clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)).background(Brush.verticalGradient(listOf(top, bottom))), contentAlignment = Alignment.TopCenter) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = if (h < 150f) 6.dp else 20.dp)) {
-            T(rank, 64f, Color.White, 700, family = Fredoka, lineHeight = 70f)
+            T(rank, 64f, Color.White, io.gilmok.daejang.ui.theme.BOLD_NUM, family = Fredoka, lineHeight = 70f)
             T(name, 20f, Color.White, 700)
         }
     }
@@ -322,6 +324,7 @@ fun NoLeagueScreen(nav: Nav, voice: CoachVoice) {
                 SecondaryButton("초대 코드 넣기", Modifier.weight(1f), height = 97f) {}
             }
         },
-        header = { Header(nav, Tab.LEAGUE) { StatusChip(rank = "혼자", middle = "성장 +4.8") } },
+        header = { Header(nav) { StatusChip(rank = "혼자", middle = "성장 +4.8") } },
+        tabBar = { Tabs(nav, Tab.LEAGUE) },
     )
 }

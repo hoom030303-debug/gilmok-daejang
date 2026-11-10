@@ -49,15 +49,36 @@ private fun noto(weight: Int) = Font(
     variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
 )
 
-@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
-private fun fredoka(weight: Int) = Font(
-    R.font.fredoka,
-    weight = FontWeight(weight),
-    variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
-)
-
 val Noto = FontFamily(noto(500), noto(700), noto(900))
-val Fredoka = FontFamily(fredoka(600), fredoka(700))
+
+/**
+ * 숫자 글꼴 Fredoka (가변 글꼴).
+ * 화면 배율을 바꿔 그리는 탭 화면에서도 굵기가 유지되도록 안드로이드 Typeface로 굵기를 고정해 불러와요.
+ */
+object Fonts {
+    private var semi: FontFamily? = null
+    private var bold: FontFamily? = null
+    private fun load(context: android.content.Context, weight: Int) = FontFamily(
+        androidx.compose.ui.text.font.Typeface(
+            android.graphics.Typeface.Builder(context.assets, "fonts/fredoka.ttf")
+                .setFontVariationSettings("'wght' $weight, 'wdth' 100")
+                .build()
+        )
+    )
+    fun init(context: android.content.Context) {
+        if (semi != null) return
+        semi = load(context, 600)
+        bold = load(context, 700)
+    }
+    /** Figma 기본 숫자 굵기 SemiBold(600) */
+    val fredoka: FontFamily get() = semi ?: FontFamily.Default
+    /** 순위 번호, 리그 점수처럼 Figma에서 Bold(700)인 숫자 */
+    val fredokaBold: FontFamily get() = bold ?: FontFamily.Default
+}
+
+/** 숫자 글꼴. T(..., weight = BOLD_NUM)일 때만 Bold, 나머지는 SemiBold */
+val Fredoka: FontFamily get() = Fonts.fredoka
+const val BOLD_NUM = 800
 
 /** 화면 배치 기준 (설계 단위) */
 object L {

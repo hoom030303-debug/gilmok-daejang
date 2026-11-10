@@ -39,7 +39,7 @@ import io.gilmok.daejang.ui.theme.L
 fun MapScreen(nav: Nav, voice: CoachVoice) {
     val road = data.nextRoad()
     val coach = "${road.name}은 ${road.leader.name}과 ${road.gap.one()}점 차예요. 내일 출근길에 가져와 봐요"
-    Screen(header = { Header(nav, Tab.MAP) }, coach = { CoachBar(coach, voice) }) {
+    Screen(header = { Header(nav) }, coach = { CoachBar(coach, voice) }, tabBar = { Tabs(nav, Tab.MAP) }) {
         TwoColumns(
             left = {
                 Picture(
@@ -106,7 +106,7 @@ private fun PersonScore(avatar: Int, name: String, sub: String, score: Double, c
 fun RoadScreen(nav: Nav, voice: CoachVoice) {
     val road = data.nextRoad()
     val coach = "내일 출근길에 다시 지나요. 내리막 들어가기 전에 미리 속도를 줄여 봐요"
-    Screen(header = { BackHeader("친구 지도", { nav.back() }, { nav.go(Route.VOICE) }) }, coach = { CoachBar(coach, voice) }) {
+    Screen(header = { BackHeader("친구 지도", { nav.back() }) }, coach = { CoachBar(coach, voice) }, tabBar = { Tabs(nav, Tab.MAP) }) {
         TwoColumns(
             left = {
                 Card(Modifier.fillMaxSize()) {

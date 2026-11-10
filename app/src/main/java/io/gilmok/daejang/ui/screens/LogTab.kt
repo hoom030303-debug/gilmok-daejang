@@ -53,7 +53,7 @@ import kotlin.math.abs
 fun LogScreen(nav: Nav, voice: CoachVoice) {
     val drives = data.drivesThisWeek()
     val coach = "이번 주엔 목요일 퇴근길이 94점으로 가장 부드러웠어요"
-    Screen(header = { Header(nav, Tab.LOG) }, coach = { CoachBar(coach, voice) }) {
+    Screen(header = { Header(nav) }, coach = { CoachBar(coach, voice) }, tabBar = { Tabs(nav, Tab.LOG) }) {
         TwoColumns(
             left = {
                 Card(Modifier.fillMaxSize()) {
@@ -91,7 +91,7 @@ fun LogScreen(nav: Nav, voice: CoachVoice) {
                                     T("${d.time} · ${d.km}km · ${d.minutes}분", 23f, C.Sub)
                                 }
                                 Box(Modifier.width(146.dp).height(67.dp).clip(RoundedCornerShape(50)).background(Color.White), contentAlignment = Alignment.Center) {
-                                    NumUnit("${d.score}", "점", 36f, if (today) C.Pink else C.Text, 20f)
+                                    NumUnit("${d.score}", "점", 36f, if (today) C.Pink else C.Text, 20f, bold = true)
                                 }
                             }
                         }
@@ -112,7 +112,7 @@ fun LogScreen(nav: Nav, voice: CoachVoice) {
                                     Column(Modifier.weight(1f).height(188.dp).clip(RoundedCornerShape(27.dp)).background(C.Row).padding(24.dp)) {
                                         T(label, 20f, C.Sub)
                                         Spacer(Modifier.height(12.dp))
-                                        NumUnit(v.first, v.second, 48f, C.Text, 21f)
+                                        NumUnit(v.first, v.second, 48f, C.Text, 21f, bold = true)
                                     }
                                 }
                             }
@@ -150,7 +150,7 @@ fun DriveDetailScreen(nav: Nav, voice: CoachVoice) {
     val plus = items.filter { it.points > 0 }.sumOf { it.points }
     val worst = items.minBy { it.points }
     val coach = "감점이 가장 큰 건 새솔초 앞 ${worst.title}이라 이걸 고칠 점으로 골랐어요"
-    Screen(header = { BackHeader("운전 기록", { nav.back() }, { nav.go(Route.VOICE) }) }, coach = { CoachBar(coach, voice) }) {
+    Screen(header = { BackHeader("운전 기록", { nav.back() }) }, coach = { CoachBar(coach, voice) }, tabBar = { Tabs(nav, Tab.LOG) }) {
         TwoColumns(
             left = {
                 Card(Modifier.fillMaxSize()) {
@@ -389,8 +389,9 @@ fun NoticeScreen(
     panel: @Composable () -> Unit,
     buttons: @Composable () -> Unit,
     header: (@Composable () -> Unit)? = null,
+    tabBar: (@Composable () -> Unit)? = null,
 ) {
-    Screen(header = header ?: { CloseHeader({ nav.close() }, { nav.demoOpen = true }) }, coach = { CoachBar(coach, voice) }) {
+    Screen(header = header ?: { CloseHeader({ nav.close() }, { nav.demoOpen = true }) }, coach = { CoachBar(coach, voice) }, tabBar = tabBar) {
         Card(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(516.dp).clip(CircleShape).background(Brush.verticalGradient(listOf(circle.copy(alpha = 0.35f), circle))), contentAlignment = Alignment.Center) {

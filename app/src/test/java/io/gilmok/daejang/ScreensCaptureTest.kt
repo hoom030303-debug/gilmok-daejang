@@ -23,6 +23,7 @@ class ScreensCaptureTest {
 
     @Test
     fun captureAll() {
+        io.gilmok.daejang.ui.theme.Fonts.init(ApplicationProvider.getApplicationContext())
         val voice = CoachVoice(ApplicationProvider.getApplicationContext())
         Route.entries.filter { it != Route.SPLASH }.forEach { r ->
             captureRoboImage("build/screens/${r.ordinal.toString().padStart(2, '0')}_${r.name}.png") {
