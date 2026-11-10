@@ -16,3 +16,6 @@ build-err.txt
 keystore/
 keystore.properties
 *.jks
+
+publish.ps1
+fix-release.ps1
